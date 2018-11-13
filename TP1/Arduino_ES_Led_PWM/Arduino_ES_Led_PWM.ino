@@ -1,5 +1,5 @@
 // On établit le seuil à atteindre à 3/4 de la tension usuelle
-int T0 = 4092;
+int T0 = 550;
 
 // On definit la pin de sortie potentiometre
 int potPin = 23;
@@ -28,7 +28,7 @@ void loop() {
   else { digitalWrite(led1Pin, LOW); }
 
   // On gere l'intensite lumineuse en f(x) de la sortie du potentiometre
-  analogWrite(led2Pin, analogValue / 5);
+  analogWrite(led2Pin, analogValue);
 
   // Definition d'un temps de pause
   delay(100);

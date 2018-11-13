@@ -1,18 +1,24 @@
-#include <DHT.h>
+#include "DHT.h"
 #include <Wire.h>
 #include "rgb_lcd.h"
-
+#include <ChainableLED.h>
 
 // Definition de la broche de connection du capteur
-#define pinSensor 5
+#define pinSensor 2
 // Definition du type de capteur utilise
 #define DHTType DHT22
 
+// Definition de la broche de sortie de la LED
+#define NUM_LEDS 1
+
 // Mode d'affichage: => true: afficheur LCD, serie sinon
-boolean printMode = false;
+boolean printMode = true;
 
 // Initialisation du capteur
 DHT dht(pinSensor, DHTType);
+
+// Config. de la led
+ChainableLED led(8, 9, NUM_LEDS);
 
 // Declaration de l'utilisation d'un afficheur
 rgb_lcd lcd;
@@ -42,7 +48,7 @@ void setup() {
 void loop() {
   // Attente de la recuperation des donnees capteurs
   //  (laisser le temps pour l'acquisition)
-  delay(1000);
+  delay(2000);
 
   // Acquisition de l'humidite
   float humidity = dht.readHumidity();
@@ -52,9 +58,9 @@ void loop() {
   // Verifie si les les infos recup sont corrompues
   if (isnan(humidity) || isnan(tmpt)) {
     if (printMode) {
-      lcd.setCursor(1, 0);
+      lcd.setCursor(0, 0);
       lcd.print("Pb de lecture de");
-      lcd.setCursor(2, 0);
+      lcd.setCursor(0, 1);
       lcd.print("donnees du capteur");
     }
     else {
@@ -68,13 +74,34 @@ void loop() {
     lcd.clear();
 
     // On se positionne sur la ligne 1
-    lcd.setCursor(1, 0);
-    lcd.print("Humidity:   %f", humidity);
-    lcd.setCursor(2, 0);
-    lcd.print("Tmpture:    %f°C", tmpt);
+    lcd.setCursor(0, 0);
+    lcd.print("Humid.:");
+    lcd.setCursor(10, 0);
+    lcd.print(humidity);
+    lcd.setCursor(14, 0);
+    lcd.print(" %");
+    
+    lcd.setCursor(0, 1);
+    lcd.print("Tmpture:   ");
+    lcd.setCursor(10, 1);
+    lcd.print(tmpt);
+    lcd.setCursor(14, 1);
+    lcd.print(" C");
   }
   else {
-    Serial.println("Humidity: %f", humidity);
-    Serial.println("Temperature:    %.2f °C", tmpt);
+    Serial.print("Humidity: ");
+    Serial.println(humidity);
+    Serial.print("Temperature:  ");
+    Serial.println(tmpt);
+    
   }
+  
+  if (tmpt < 26.00) {
+    led.setColorRGB(0, 0, 255, 0);
+  }
+  else {
+    led.setColorRGB(0, 255, 0, 0);
+  }
+
+  delay(250);
 }
