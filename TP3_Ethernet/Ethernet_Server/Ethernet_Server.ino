@@ -1,3 +1,4 @@
+// Inclusion de toutes les bibliothèques necessaires
 #include <SPI.h>
 #include <Ethernet.h>
 #include <Wire.h>
@@ -70,10 +71,10 @@ byte ip[] = { 192, 168, 1, 177 };
 // Masque sous-reseau
 byte subnet[] = { 255, 255, 255, 0 };
 
-// Objet Ethernet serveur
+// Objet Ethernet serveur avec affectation d'un port d'ecoute
 EthernetServer server(80);
 
-// Objet Chainable => pilotage LEDs
+// Objet Chainable pour le pilotage de LEDs
 ChainableLED led(6, 7, NUM_LEDS);
 
 
@@ -115,9 +116,9 @@ float bme280GetTemperature()
   return T/100; 
 }
 
+// Retourne la valeur de la pression apres conversion en Pa
 float bme280GetPressure(unsigned long up)
-{
-  
+{  
   return (float)up/256;
 }
 
@@ -170,6 +171,7 @@ uint16_t BME280Read16(uint8_t address)
   return (uint16_t)msb << 8 | lsb;  
 }
 
+// Permet de lire le contenu d'un registre
 uint16_t BME280Read16LE(uint8_t address) {
   uint16_t data = BME280Read16(address);
   return (data >> 8) | (data << 8);  
@@ -263,13 +265,15 @@ void writeRegister(uint8_t address, uint8_t val)
 void setup() {
   Serial.begin(9600);
 
-  // Initialisatiion bus serie  
+  // Initialisation bus serie  
   Wire.begin();
 
    // Initialidation BMP085 : récupérer les paramètres de calibration du capteur
   uint8_t chip_id = 0;
   uint8_t retry = 0;
 
+  // Au bout de 5 tentatives de recherche du BME280 sur le bus I2C
+  // On cherche à le contacter grâce à l'adresse de son registre connu
   while ((retry++ < 5) && (chip_id != 0x60)) {
     chip_id = BME280Read8(Sensor_id); 
     Serial.println(chip_id);
@@ -280,41 +284,42 @@ void setup() {
   // On initialise les params reseau de la carte
   //  et on verifie le retour DHCP
   Ethernet.begin(mac, ip, subnet);
-
-  // Initialisation capteur
-  //bme280.init();
   
   // Initialisation serveur
   server.begin();
 }
 
 void loop() {
-  
-  //Serial.print("Adresse IP locale: ");
-  //Serial.println(Ethernet.localIP());
 
   // listen for incoming clients
   EthernetClient client = server.available();
+  // On verifie si un client est connecte
   if (client) {
     Serial.println("new client");
     // an http request ends with a blank line
     boolean currentLineIsBlank = true;
     String ledvalues = "";
-    
+
+    // Tant qu'un client est connecte, il faut executer une requete
     while (client.connected()) {
       if (client.available()) {
         char c = client.read();
         ledvalues += c;
-        //Serial.write(c);
 
+        // Affichage de la requete sur le moniteur serie de l'IDE
+        Serial.print(c);
+
+        // Lecture de la valeur de la temperature dans le registre
         bme280ReadUT();
+        // Recuperation de la temperature formatee
         float tmpt = bme280GetTemperature();
-        //bme280.getTemperature();
+        // Recuperation de la pression
         float pression = bme280GetPressure(bme280ReadUP());
-        //bme280.getPressure();
+        // Estimation de l'altitude en fonction de la pression calculee
         float altitude = estime_altitude(pression);
-        //bme280.calcAltitude(pression);
 
+        // On verifie si la requete precedente retourne une ligne vide
+        // Ce qui annonce le debut d'une seconde requete
         if (c == '\n' && currentLineIsBlank) {
           // send a standard http response header
           client.println("HTTP/1.1 200 OK");
@@ -325,21 +330,25 @@ void loop() {
           client.println("<html>");
           
           client.println("<form action=\"\">");
-          client.print("Temperature: ");          
+          client.print("Temperature: ");       
+          // Affichage de la temperature   
           client.print(tmpt);
           client.println(" C");
           client.println("<br>");
 
           client.print("Pression: ");
+          // Affichage de la pression en hPa
           client.print(pression/100);
           client.println(" hPa");          
           client.println("<br>");
 
           client.print("Altitude: ");
+          // Affichage de la valeur estimee de l'altitude a partir de la pression mesuree
           client.print(altitude);
           client.println(" m");          
           client.println("<br>");
-          
+
+          // Partie pour la modification de la luminance de la LED RGB
           client.println("<br>");
           client.println("Reglage LED RGB");
           client.println("<br>");
@@ -371,12 +380,12 @@ void loop() {
     client.stop();
     Serial.print(ledvalues);
 
-    // Recup des valeurs des couleurs RGB pour conf
+    // Recuperation des valeurs de couleurs depuis la requete effectuee depuis le client
     int redS = ledvalues.indexOf("RedValue");
     int greenS = ledvalues.indexOf("GreenValue");
     int blueS = ledvalues.indexOf("BlueValue");
 
-    // On teste le retour de la mehode valueOf
+    // On teste le retour de la methode valueOf
     if ((redS != -1) && (greenS != -1) && (blueS != -1)) {
       // On se positionne au niveau du caractere apres le '='
       int posR = redS + 9;
