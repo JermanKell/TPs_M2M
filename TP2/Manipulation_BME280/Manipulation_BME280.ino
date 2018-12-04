@@ -7,8 +7,7 @@
 #include "rgb_lcd.h"
 #include <ChainableLED.h>
 
-// Capteur de pression : adressage I2C
-// adresse sur le bus I2C du capteur bme280
+// Declaration de tous les registres utilises
 #define Sensor_addr 0x76
 #define Sensor_id 0xD0
 #define Sensor_tmpt_reg 0xFA
@@ -38,6 +37,7 @@
 #define BME280_REG_DIG_H5    0xE5
 #define BME280_REG_DIG_H6    0xE7
 
+// Declaration de variables lies aux registres
 uint16_t dig_T1;
 int16_t dig_T2;
 int16_t dig_T3;
@@ -58,15 +58,12 @@ int16_t dig_H5;
 int8_t  dig_H6;
 int32_t t_fine;
 
-// Oversampling Setting pour bme280
-
-// Coefficients de calibration du capteur de pression bme280 : déclaration
-
 /*---------------------------------------------------------------------------------*/
 // Fonctions de gestion du capteur de pression bme280
 
 /*-----------------------------------------------*/
 // Acquisition de la valeurs des parametres de calibration
+// Ecriture dans les registres pour configurer le capteur
 void getbme280Calibration()
 {
   dig_T1 = BME280Read16LE(BME280_REG_DIG_T1);
@@ -110,8 +107,7 @@ float bme280GetTemperature()
 // La valeur retournée est exprimé en Pa (valeur entiére), puis convertie en hPa (valeur réelle).
 
 float bme280GetPressure(unsigned long up)
-{
-  
+{  
   return (float)up/256;
 }
 
@@ -264,9 +260,12 @@ ChainableLED led(6, 7, NUM_LEDS);
 
 void setup(void)
 { 
+  // Configuration de la communication serie
   Serial.begin(9600);
 
+  // Initialisation de l'afficheur LCD
   lcd.begin(16, 2);
+  // On initialise une couleur de fond
   lcd.setRGB(255, 0, 0);
   
   // Votre code à écrire
@@ -276,11 +275,14 @@ void setup(void)
   uint8_t chip_id = 0;
   uint8_t retry = 0;
 
+  // Au bout de 5 tentatives de recherche du BME280 sur le bus I2C
+  // On cherche à le contacter grâce à l'adresse de son registre connu
   while ((retry++ < 5) && (chip_id != 0x60)) {
     chip_id = BME280Read8(Sensor_id); 
     Serial.println(chip_id);
   }
 
+  // Appel a la methode pour le calibrage
   getbme280Calibration();    
 }
 
@@ -305,20 +307,24 @@ void loop (void)
   altitude = estime_altitude(pression); 
 
   lcd.clear();
-  
+
+  // On positionne correctement le curseur pour ecrire
   lcd.setCursor(1, 0);
   lcd.print("Tmp: ");
   lcd.setCursor(5, 0);
   lcd.print(temperature);
   lcd.setCursor(11, 0);
   lcd.print("C");
-  
+
+  // On teste la valeur de temperaure recuperee
+  // On affiche un message et on allume la LED en vert
   if (temperature < 26.00) {
     lcd.setRGB(0, 255, 0);
     lcd.setCursor(0, 1);
     lcd.print("Il fait bon ici!");
     led.setColorRGB(0, 0, 255, 0);
   }
+  // Sinon on allume la LED en rouge avec un message ecrit sur l'afficheur
   else {
     lcd.setRGB(255, 0, 0);
     lcd.setCursor(2, 1);
