@@ -74,7 +74,7 @@ byte subnet[] = { 255, 255, 255, 0 };
 EthernetServer server(80);
 
 // Objet Chainable => pilotage LEDs
-ChainableLED led(7, 8, NUM_LEDS);
+ChainableLED led(6, 7, NUM_LEDS);
 
 
 /*********************************************************************/
