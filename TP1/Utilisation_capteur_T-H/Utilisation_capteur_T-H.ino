@@ -8,8 +8,8 @@
 // Definition du type de capteur utilise
 #define DHTType DHT22
 
-// Definition de la broche de sortie de la LED
-#define NUM_LEDS 1
+// Definition du nombre de led
+#define NB_LEDS 1
 
 // Mode d'affichage: => true: afficheur LCD, serie sinon
 boolean printMode = true;
@@ -18,7 +18,7 @@ boolean printMode = true;
 DHT dht(pinSensor, DHTType);
 
 // Config. de la led
-ChainableLED led(8, 9, NUM_LEDS);
+ChainableLED led(8, 9, NB_LEDS);
 
 // Declaration de l'utilisation d'un afficheur
 rgb_lcd lcd;
@@ -57,7 +57,9 @@ void loop() {
   // Verifie si les les infos recup sont corrompues
   if (isnan(humidity) || isnan(tmpt)) {
     if (printMode) {
+      //place le curseur d'écriture à la première ligne et première colonne
       lcd.setCursor(0, 0);
+      //ecrit dans le lcd
       lcd.print("Pb de lecture de");
       lcd.setCursor(0, 1);
       lcd.print("donnees du capteur");
@@ -72,7 +74,7 @@ void loop() {
     // On efface l'affichage
     lcd.clear();
 
-    // On se positionne sur la ligne 1
+    // On se positionne sur la première ligne et colonne
     lcd.setCursor(0, 0);
     lcd.print("Humid.:");
     lcd.setCursor(10, 0);
@@ -96,9 +98,11 @@ void loop() {
   }
   
   if (tmpt < 26.00) {
+    // Met la led de couleur vert
     led.setColorRGB(0, 0, 255, 0);
   }
   else {
+    // Met la led de couleur rouge
     led.setColorRGB(0, 255, 0, 0);
   }
 
