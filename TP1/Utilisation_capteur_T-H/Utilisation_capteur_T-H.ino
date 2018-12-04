@@ -33,13 +33,12 @@ void setup() {
   Serial.begin(9600);
 
   dht.begin();
+  Wire.begin();
 
   // Conf de l'afficheur
   if (printMode) {
     // Init nb colonnes et lignes
     lcd.begin(16, 2);
-    // Init background afficheur
-    lcd.setRGB(colorR, colorG, colorB);
     
   }
 
